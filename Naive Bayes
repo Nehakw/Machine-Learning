@@ -1,0 +1,105 @@
+Spam filter based on a Naïve Bayes classifier 
+In this homework you will implement and evaluate a Naive Bayes classifier for spam filtering.
+Download the dataset files hw3_train.zip and hw3_test.zip. The dataset is divided into two sets: a training set and a test set. Each set has two directories: spam and ham. All files in the spam folders are spam messages and all files in the ham folders are ham (non spam) messages. Use the training datasets to train a Naive Bayes classifier for text classification. Test the classifier’s performance on the test set. Build word clouds for the training ham set and for the training spam set and compare them. Write a short report providing a) the steps of your work; b) a comparison between the ham and the spam word clouds; c) an evaluation of the performance of the classifier.
+Commands you might need, which are not on the lecture slides:
+VCorpus(DirSource("directory name")) to build a volatile corpus from a directory
+c() to combine corpora.
+All other commands you need to solve the homework are on the lecture slides. Your submission must consist of two text files:
+- a text file, description.txt, no longer than a page
+
+Script:
+
+# Libraries Required
+library(tm)
+library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
+library(e1071)
+library(gmodels)
+# Reading the ham and spam messages into corpus 
+# Training data
+ham_train <- VCorpus(DirSource("/Users/kkgenius/Desktop/UIS/UIS_Fall/Machine_Learning/Homework_3/train/ham/"))
+spam_train <- VCorpus(DirSource("/Users/kkgenius/Desktop/UIS/UIS_Fall/Machine_Learning/Homework_3/train/spam/"))
+# Test Data
+ham_test <- VCorpus(DirSource("/Users/kkgenius/Desktop/UIS/UIS_Fall/Machine_Learning/Homework_3/test/ham/"))
+spam_test <- VCorpus(DirSource("/Users/kkgenius/Desktop/UIS/UIS_Fall/Machine_Learning/Homework_3/test/spam/"))
+# Combining the training and test sets
+ham_spam_train <- c(ham_train , spam_train)
+ham_spam_test <- c(ham_test, spam_test)
+# Cleaning the data
+# To Lower case:
+train_clean <- tm_map(ham_spam_train, content_transformer(tolower))
+# To remove numbers:
+ train_clean <- tm_map(train_clean, removeNumbers)
+# To remove stopwords:
+train_clean <- tm_map(train_clean, removeWords, stopwords())
+# To remove punctuation:
+train_clean <- tm_map(train_clean, removePunctuation)
+# To remove stem words:
+train_clean <- tm_map(train_clean, stemDocument)
+# To remove whitespace:
+train_clean <- tm_map(train_clean, stripWhitespace)
+# Test data cleaning
+# To Lower case:
+ test_clean <- tm_map(ham_spam_test, content_transformer(tolower))
+# To remove numbers:
+test_clean <- tm_map(test_clean, removeNumbers)
+# To remove stopwords:
+test_clean <- tm_map(test_clean, removeWords, stopwords())
+# To remove punctuation:
+test_clean <- tm_map(test_clean, removePunctuation)
+# To remove stem words:
+test_clean <- tm_map(test_clean, stemDocument)
+# To remove whitespace:
+ test_clean <- tm_map(test_clean, stripWhitespace)
+# Building the document term matrix
+train_dtm <- DocumentTermMatrix(train_clean)
+test_dtm <- DocumentTermMatrix(test_clean)
+# Getting message count
+hamtrain_count <- length(ham_train)
+spamtrain_count <- length(spam_train)
+hamtest_count <- length(ham_test)
+spamtest_count <- length(spam_test)
+# Creating training and test labels
+train_labels <- c(rep("ham",340), rep("spam",123))    
+train_labels <- factor(train_labels)
+test_labels <- c(rep("ham", 348), rep("spam", 130))  
+test_labels <- factor(test_labels)
+# Building the word cloud on training ham and spam set
+ham_train_clean <- tm_map(ham_train, content_transformer(tolower))
+ham_train_clean <- tm_map(ham_train_clean, removeNumbers)
+ham_train_clean <- tm_map(ham_train_clean, removeWords, stopwords())
+ham_train_clean <- tm_map(ham_train_clean, removePunctuation)
+ham_train_clean <- tm_map(ham_train_clean, stemDocument)
+ham_train_clean <- tm_map(ham_train_clean, stripWhitespace)
+spam_train_clean <- tm_map(spam_train, content_transformer(tolower))
+spam_train_clean <- tm_map(spam_train_clean, removeNumbers)
+spam_train_clean <- tm_map(spam_train_clean, removeWords, stopwords())
+spam_train_clean <- tm_map(spam_train_clean, removePunctuation)
+spam_train_clean <- tm_map(spam_train_clean, stemDocument)
+spam_train_clean <- tm_map(spam_train_clean, stripWhitespace)
+colorlist = c("red","blue","green","orange")
+wordcloud(ham_train_clean, max.words = 50, scale = c(3,0.5), colors = colorlist)
+wordcloud(spam_train_clean, max.words = 50, scale = c(3,0.5), colors = colorlist)
+# Finding frequent terms
+findFreqTerms(train_dtm, 5)
+findFreqTerms(test_dtm, 5)
+train_freq_words <- findFreqTerms(train_dtm, 5)
+test_freq_words <- findFreqTerms(test_dtm, 5)
+hamspam_dtm_freq_train <- train_dtm[ , train_freq_words]
+hamspam_dtm_freq_test <- test_dtm[ , test_freq_words]
+# Applying convert count function for changing the numeric values
+convert_counts <- function(x) { x <- ifelse(x > 0, "Yes", "No") }
+# Applying convert_count function on test and train data
+hamspam_train <- apply(hamspam_dtm_freq_train, MARGIN = 2, convert_counts)
+hamspam_test <- apply(hamspam_dtm_freq_test, MARGIN = 2, convert_counts)
+# Training a model on data
+hamspam_classifier <- naiveBayes(hamspam_train, train_labels)
+# Evaluating model performance
+hamspam_test_pred <- predict(hamspam_classifier, hamspam_test)
+CrossTable(hamspam_test_pred, test_labels, prop.chisq = FALSE, prop.t = FALSE, dnn = c('predicted', 'actual'))
+# Improving model performance with laplace estimator
+hamspam_classifier2 <- naiveBayes(hamspam_train, train_labels, laplace =  1)
+hamspam_test_pred2 <- predict(hamspam_classifier2, hamspam_test)
+CrossTable(hamspam_test_pred2, test_labels, prop.chisq = FALSE, prop.t = FALSE, prop.r = FALSE, dnn = c('predicted', 'actual'))
+savehistory("script_naiveBayes.txt")
