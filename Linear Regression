@@ -1,0 +1,86 @@
+In this homework, you need to implement a linear regression model.
+1. Load Boston.cvs data set. It records 14 variables for 506 neighborhoods around Boston:
+crim: per capita crime rate by town.
+zn: proportion of residential land zoned for lots over 25,000 sq.ft.
+indus: proportion of non-retail business acres per town.
+chas: Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+nox: nitrogen oxides concentration (parts per 10 million).
+rm: average number of rooms per dwelling.
+age: proportion of owner-occupied units built prior to 1940.
+dis: weighted mean of distances to five Boston employment centers.
+rad: index of accessibility to radial highways.
+tax: full-value property-tax rate per \$10,000.
+ptratio: pupil-teacher ratio by town.
+black: 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+lstat: lower status of the population (percent).
+medv: median value of owner-occupied homes in \$1000s.
+2. Do any of the suburbs of Boston appear to have particularly high median home values? Low crime rates? Low pupil-teacher ratios? Comment on the range of each of these variables. Which suburbs have high median home values and low pupil-teacher ratios and low crime rates?
+3. How many suburbs in this data set bound the Charles river?
+4. Fit a multiple regression model to predict the response variable medv using all other variables.
+For which variables the corresponding regression coefficients are likely to be significant?
+5. On the basis of your response to the previous question, fit a smaller linear regression model that only uses predictors for which there is evidence of association with medv.
+6. How well the models in 4 and 5 fit the data? 
+7. Try to reduce the set of predictors by making correlation and scatterplot matrices. 
+8. Fit even a smaller model using the predictors of your choice.
+9. Investigate possible interactions between the variables in the last model. Try to find a model with R2>77.
+Write a short report providing the answers to the questions above. Your submission must consist of two text files:
+- a text file, report.txt, no longer than a page,
+
+Script:
+
+# Libraries Required
+library(car)
+# 1
+boston <- read.csv("Boston.csv")
+str(boston)
+boston <- boston[-1]
+summary(boston)
+cor(boston)
+pairs(~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat+medv, data = boston)
+# 2
+# High median home value
+hist(boston$medv)
+sub_high = which(boston$medv > median(boston$medv))
+length(sub_high)
+# Low pupil-teacher ratio
+summary(boston$ptratio)
+hist(boston$ptratio)
+length(boston$ptratio[boston$ptratio < 14])
+# Low crime rate
+summary(boston$crim)
+hist(boston$crim)
+length(boston$crim[boston$crim < 30])
+# No. of suburbs with high median home value, low pupil-teacher ratio, low crime rate
+no_subs <- boston[order(boston$medv),]
+no_subs[501,]
+no_subs[454,]
+no_subs[450,]
+no_subs[426,]
+# 3
+table(boston$chas)
+# 4
+boston_model <- lm(medv ~ ., data = boston)
+boston_model
+summary(boston_model)
+# 5
+boston_model1 <- lm(medv ~ . -age -indus, data = boston)
+boston_model1
+summary(boston_model1)
+# 7 
+cor(boston)
+plot(boston$lstat, boston_model1$residuals, main = "Residuals vs. Predictor", xlab = "Lower Status Percentage", ylab = "Residuals", pch = 20, abline(h=0))
+plot(boston$rm, boston_model1$residuals, main = "Residuals vs. Predictor", xlab = "Average No of Rooms", ylab = "Residuals", pch = 20, abline(h=0))
+plot(boston$ptratio, boston_model1$residuals, main = "Residuals vs. Predictor", xlab = "Pupil/Teacher Ratio", ylab = "Residuals", pch = 20, abline(h=0))
+# 8
+outlierTest(boston_model1)
+boston <- boston[-c(369, 372, 373),]
+boston_model2 <- lm(medv ~ . -age -indus, data = boston)
+summary(boston_model2)
+vif(boston_model2)
+boston_model3 <- lm(medv ~ . -age -indus -zn -rad -tax, data = boston)
+boston_model3
+summary(boston_model3)
+# 9
+boston_model3 <- lm(log(medv) ~ . -age -indus -zn -rad -tax, data = boston)
+summary(boston_model3)
+savehistory("script_regression.txt")
