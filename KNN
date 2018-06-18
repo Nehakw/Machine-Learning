@@ -1,0 +1,97 @@
+Applying k-Nearest Neighbors to predict MPG (due by the end of the day on Sunday, October15th)
+1. Download the dataset Auto.csv.
+2. Explore the overall structure of the dataset using str(). Describe it one paragraph.
+3. Convert the attribute horsepower from character to integer.
+4. The horsepower attribute has some missing values. Remove the observations with missing values, i.e., delete the rows with missing values from the data frame.
+5. Explore the data in order to investigate the association between mpg and the other features. Which of the other features seem most likely to be useful in predicting mpg (scatterplots may be useful tools to answer this question). Describe your findings.
+6. Create a new attribute mpg1 that contains 1 if mpg is strictly greater than its median, and 0 if mpg is equal or less than its median.
+7. Decide which attributes you are going to use to predict mpg1. Remove all remaining attributes, including mpg.
+8. Set the seed of the random number generator to a fixed integer, say 1, so that you can reproduce your work:
+> set.seed(1)
+9. Normalize the attribute values
+10. Randomize the order of the rows in the dataset
+11. Split the data into a training set and a test set. Use a test set of 100 rows.
+12. Perform kNN on the training data, with several values of K, in order to predict mpg1. What test errors do you obtain? Which value of K seems to perform the best on this data set?
+Commands you might need, which are not on the lecture slides:
+as.intereger(): to coerce a string to integer
+sapply(<vector>,<function>): to apply a function to each element of a vector and return
+a vector of results
+sample(nrow(<data frame)): to create a random sample from 1 to the number of rows in <data frame>
+Your submission must consist of two text files:
+- a text file, description.txt, no longer than a page: Your answers to 2, 5, 7, and 12
+
+Script:
+
+# QUESTION 1: Reading from the csv file
+auto <- read.csv("auto.csv", stringsAsFactor = FALSE)
+# QUESTION 2: Understanding the structure of the dataset
+str(auto)
+#QUESTION 3: Converting horsepower from character to integer
+auto$horsepower <- as.integer(auto$horsepower)
+#QUESTION 4: Removing the missing values
+auto <- na.omit(auto)
+nrow(auto)
+# QUESTION 5: Finding the features which are helpful in predicting mpg
+corr_mat <- cor(auto[c(1:8)])
+corr_mat
+library(corrplot)
+corrplot(corr_mat)
+# Determining relationship with scatterplot
+plot(x = auto$cylinders, y = auto$mpg, main = "Scatterplot of MPG vs. Cylinders", xlab = "Cylinders", ylab = "Mileage per gallon (mpg)")
+plot(x = auto$displacement, y = auto$mpg, main = "Scatterplot of MPG vs. Displacement", xlab = "Displacement", ylab = "Mileage per gallon (mpg)")
+plot(x = auto$horsepower, y = auto$mpg, main = "Scatterplot of MPG vs. Horsepower", xlab = "Horsepower", ylab = "Mileage per gallon (mpg)")
+plot(x = auto$weight, y = auto$mpg, main = "Scatterplot of MPG vs. Weight", xlab = "Weight", ylab = "Mileage per gallon (mpg)")
+plot(x = auto$acceleration, y = auto$mpg, main = "Scatterplot of MPG vs. Acceleration", xlab = "Acceleration", ylab = "Mileage per gallon (mpg)")
+plot(x = auto$year, y = auto$mpg, main = "Scatterplot of MPG vs. Year", xlab = "Year", ylab = "Mileage per gallon (mpg)")
+plot(x = auto$origin, y = auto$mpg, main = "Scatterplot of MPG vs. Origin", xlab = "Origin", ylab = "Mileage per gallon (mpg)")
+# QUESTION 6: Finding mpg1 based on median value for mpg
+auto$mpg1[auto$mpg <= median(auto$mpg)] <- 0
+auto$mpg1[auto$mpg > median(auto$mpg)] <- 1
+auto$mpg1
+# QUESTION 7: Deciding attributes for predicting mpg1
+corr_mat1 = subset(auto, select = -name)
+mat1 <- cor(corr_mat1)
+mat1
+corrplot(mat1)
+auto_remove = subset(auto, select = -c(mpg, year, origin, name))
+str(auto_remove)
+# QUESTION 8: Setting the seed value for random number generation
+set.seed(1)
+# QUESTION 9: Normalizing the attribute
+summary(auto_remove[c(1:6)])
+normalize <- function(x) {
+return ((x - min(x)) / (max(x) - min(x)))
+}
+auto_n <- as.data.frame(lapply(auto_remove[1:6], normalize))
+summary(auto_n)
+# QUESTION 10: Randomize the order of rows in the dataset
+auto_r <- auto_n[sample(nrow(auto_n)), ]
+str(auto_r)
+nrow(auto_r)
+# QUESTION 11: Splitting the dataset into training and test set
+auto_train <- auto_r[1:292, ]
+auto_test <- auto_r[293:392, ]
+auto_train = subset(auto_train, select = -mpg1)
+auto_test = subset(auto_test, select = -mpg1)
+auto_train_labels <- auto_r[1:292, 6]
+auto_test_labels <- auto_r[293:392, 6]
+# QUESTION 12: Performing kNN with several k values
+library(class)
+library(gmodels)
+auto_test_pred <- knn(train = auto_train, test = auto_test, cl = auto_train_labels, k = 17)
+CrossTable(x = auto_test_labels, y = auto_test_pred, prop.chisq = FALSE)
+auto_test_pred <- knn(train = auto_train, test = auto_test, cl = auto_train_labels, k = 1)
+CrossTable(x = auto_test_labels, y = auto_test_pred, prop.chisq = FALSE)
+auto_test_pred <- knn(train = auto_train, test = auto_test, cl = auto_train_labels, k = 5)
+CrossTable(x = auto_test_labels, y = auto_test_pred, prop.chisq = FALSE)
+auto_test_pred <- knn(train = auto_train, test = auto_test, cl = auto_train_labels, k = 10)
+CrossTable(x = auto_test_labels, y = auto_test_pred, prop.chisq = FALSE)
+auto_test_pred <- knn(train = auto_train, test = auto_test, cl = auto_train_labels, k = 25)
+CrossTable(x = auto_test_labels, y = auto_test_pred, prop.chisq = FALSE)
+auto_test_pred <- knn(train = auto_train, test = auto_test, cl = auto_train_labels, k = 30)
+CrossTable(x = auto_test_labels, y = auto_test_pred, prop.chisq = FALSE)
+auto_test_pred <- knn(train = auto_train, test = auto_test, cl = auto_train_labels, k = 40)
+CrossTable(x = auto_test_labels, y = auto_test_pred, prop.chisq = FALSE)
+auto_test_pred <- knn(train = auto_train, test = auto_test, cl = auto_train_labels, k = 60)
+CrossTable(x = auto_test_labels, y = auto_test_pred, prop.chisq = FALSE)
+savehistory("script.txt")
