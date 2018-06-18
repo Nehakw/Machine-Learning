@@ -1,0 +1,162 @@
+Machine learning in politics 
+Download the dataset house-votes.txt. The dataset includes votes for each of the U.S. House of Representatives Congressmen on the 16 key votes identified by Congressional Quarterly Almanac, 98th Congress, 2nd session 1984, Volume XL: Congressional Quarterly Inc. Washington, D.C., 1985. The CQA lists nine different types of votes: voted for, paired for, and announced for (these three simplified to yea), voted against, paired against, and announced against (these three simplified to nay), voted present, voted present to avoid conflict of interest, and did not vote or otherwise make a position known (these three simplified to an unknown disposition).
+The task is to predict whether the voter is a republican or a democrat based on their votes.
+Attribute Information:
+1. Class Name: 2 (democrat, republican) 2. handicapped-infants: 2 (y,n) 3. water-project-cost-sharing: 2 (y,n) 4. adoption-of-the-budget-resolution: 2 (y,n) 5. physician-fee-freeze: 2 (y,n) 6. el-salvador-aid: 2 (y,n) 7. religious-groups-in-schools: 2 (y,n) 8. anti-satellite-test-ban: 2 (y,n) 9. aid-to-nicaraguan-contras: 2 (y,n) 10. mx-missile: 2 (y,n) 11. immigration: 2 (y,n) 12. synfuels-corporation-cutback: 2 (y,n) 13. education-spending: 2 (y,n) 14. superfund-right-to-sue: 2 (y,n) 15. crime: 2 (y,n) 16. duty-free-exports: 2 (y,n) 17. export-administration-act-south-africa: 2 (y,n)
+1. Import the txt file into a data frame.
+2. Prepare the data. Impute missing values in a way that agrees with the goal of the project.
+3. Apply two machine learning algorithms to the dataset. One of the algorithms should have not been used in previous homeworks. In other words, one of the algorithms must be different from kNN, Naïve Bayes and linear regression. Use confusion matrices and different performance measure to compare the algorithms.
+4. Use 10-fold CV to estimate how well the learning algorithms will perform on new datasets. Compare the algorithms.
+5. Perform automated parameter tuning for both models (if they allow it) using the caret package.
+6. Try to improve the performance of each algorithm by using ensemble learning (one method of ensemble learning of your choice) and the caret package. Compare the algorithms.
+Write a report (between 3 and 5 pages) describing what you have done, the algorithm comparisons and summarizing the results.
+Your submission must consist of two files: - a report as a txt, docx, or a pdf file - a text file, script.txt
+
+Script:
+
+# Libraries used
+library(C50)
+library(gmodels)
+library(tm)
+library(e1071)
+library(irr)
+library(caret)
+library(plyr)
+library(klaR)
+library(ipred)
+library(randomForest)
+# Importing the text file into data frame
+votes <- read.table("house_votes.txt", sep = ",")
+str(votes)
+# Imputing the missing values
+length(votes[votes == "?"])
+table(votes$V2)
+# V2 has n = 236 and y = 187; hence, replace ? with n
+votes$V2[votes$V2 == "?"] <- "n"
+table(votes$V3)
+# V3 has n= 192 and y =  195; hence, replace ? with y
+votes$V3[votes$V3 == "?"] <- "y"
+table(votes$V4)
+# V4 has n= 171 and y = 253; hence, replace ? with y
+votes$V4[votes$V4 == "?"] <- "y"
+table(votes$V5)
+# V5 has n = 247 and y = 177; hence, replace ? with n
+votes$V5[votes$V5 == "?"] <- "n"
+table(votes$V6)
+# V6 has n = 208 and y = 212; hence, replace ? with y
+votes$V6[votes$V6 == "?"] <- "y"
+table(votes$V7)
+# V7 has n = 152 and y = 272; hence, replace ? with y
+votes$V7[votes$V7 == "?"] <- "y"
+table(votes$V8)
+# V8 has n = 182 and y = 239; hence, replace ? with y
+votes$V8[votes$V8 == "?"] <- "y"
+table(votes$V9)
+# V9 has n = 178 and y = 242; hence, replace ? with y
+votes$V9[votes$V9 == "?"] <- "y"
+table(votes$V10)
+# V10 has n = 206 and y = 207; hence, replace ? with y
+votes$V10[votes$V10 == "?"] <- "y"
+table(votes$V11)
+# V11 has n = 212 and y = 216; hence, replace ? with y
+votes$V11[votes$V11 == "?"] <- "y"
+table(votes$V12)
+# V12 has n = 264 and y = 150; hence, replace ? with n
+votes$V12[votes$V12 == "?"] <- "n"
+table(votes$V13)
+# V13 has n = 233 and y = 171; hence, replace ? with n
+votes$V13[votes$V13 == "?"] <- "n"
+table(votes$V14)
+# V14 has n = 201 and y = 209; hence, replace ? with y
+votes$V14[votes$V14 == "?"] <- "y"
+table(votes$V15)
+# V15 has n = 170 and y = 248; hence, replace ? with y
+votes$V15[votes$V15 == "?"] <- "y"
+table(votes$V16)
+# V16 has n = 233 and y = 174; hence, replace ? with n
+votes$V16[votes$V16 == "?"] <- "n"
+table(votes$V17)
+# V17 has n = 62 and y = 269; hence, replace ? with y
+votes$V17[votes$V17 == "?"] <- "y"
+# Using C5.0 decision trees
+table(votes$V1)
+set.seed(123)
+votes_train <- votes[1:390, ]
+votes_test <- votes[391:435, ]
+prop.table(table(votes_train$V1))
+prop.table(table(votes_test$V1))
+votes_model <- C5.0(votes_train[-1], votes_train$V1)
+votes_model
+summary(votes_model)
+votes_pred <- predict(votes_model, votes_test)
+CrossTable(votes_test$V1, votes_pred, prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE, dnn = c('actual votes', 'predicted votes'))
+# Using NaiveBayes
+nb_train <- votes[1:326,]
+nb_test <- votes[327:435,]
+nb_train_labels <- votes[1:326,]$V1
+nb_test_labels <- votes[327:435,]$V1
+prop.table(table(nb_train_labels))
+prop.table(table(nb_test_labels))
+nb_classifier <- naiveBayes(nb_train, nb_train_labels)
+nb_test_pred <- predict(nb_classifier, nb_test)
+CrossTable(nb_test_pred, nb_test_labels, prop.chisq = FALSE, prop.t = FALSE, dnn = c('predicted votes', 'actual votes'))
+# Using 10 fold cross-validation on Decision Tree model
+folds <- createFolds(votes$V1, k = 10)
+votes01_test <- votes[folds$Fold01, ]
+votes01_train <- votes[-folds$Fold01, ]
+set.seed(123)
+folds <- createFolds(votes$V1, k = 10)
+dtcv_results <- lapply( folds, function(x) {
+votes_train <- votes[-x,]
+votes_test <- votes[x,]
+votes_model <- C5.0(V1 ~ ., data = votes)
+votes_pred <- predict(votes_model, votes_test)
+votes_actual <- votes_test$V1
+kappa <- kappa2(data.frame(votes_actual, votes_pred))$value
+return(kappa)
+})
+mean(unlist(dtcv_results))
+# Using 10 fold cross-validation on Naive Bayes model
+nbcv_results <- lapply( folds, function(x) {
+votes_train <- votes[-x,]
+votes_test <- votes[x,]
+votes_model <- naiveBayes(V1 ~ ., data = votes)
+votes_pred <- predict(votes_model, votes_test)
+votes_actual <- votes_test$V1
+kappa <- kappa2(data.frame(votes_actual, votes_pred))$value
+return(kappa)
+})
+mean(unlist(nbcv_results))
+# Performing automated parameter tuning on Decision Tree model
+set.seed(1)
+tune_dt <- train(V1 ~ ., data = votes, method = "C5.0")
+tune_dt
+tune_dt$finalModel
+plot(tune_dt)
+p_dt <- predict(tune_dt, votes)
+table(p_dt, votes$V1)
+head(predict(tune_dt, type = "prob"))
+# Performing automated parameter tuning on Naive Bayes model
+set.seed(1)
+tune_nb <- train(V1 ~ ., data = votes, method = "nb")
+tune_nb
+tune_nb$finalModel
+plot(tune_nb)
+p_nb <- predict(tune_nb, votes)
+table(p_nb, votes$V1)
+head(predict(tune_nb, type = "prob"))
+# Using ensemble learning on Decision Tree model
+str(ctreeBag)
+bagctrl_dt <- bagControl(fit = ctreeBag$fit, predict = ctreeBag$pred, aggregate = ctreeBag$aggregate)
+set.seed(1)
+ctrl <- trainControl(method = "cv", number = 10)
+dt_bag <- train(V1 ~ ., data = votes , trControl = ctrl, bagControl = bagctrl_dt)
+dt_bag
+# Using ensemble learning on Naive Bayes model
+str(nbBag)
+bagctrl_nb <- bagControl(fit = nbBag$fit, predict = nbBag$pred, aggregate = nbBag$aggregate)
+set.seed(1)
+ctrl <- trainControl(method = "cv", number = 10)
+nb_bag <- train(V1 ~ ., data = votes , "bag", trControl = ctrl, bagControl = bagctrl_nb)
+nb_bag
+savehistory("FinalProject_script.txt")
